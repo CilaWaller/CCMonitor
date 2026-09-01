@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCMonitor · AI Coding Plan 余量监控</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo">⏱</span>
+    <span class="title">CCMonitor</span>
+    <span class="subtitle">AI Coding Plan 余量监控</span>
+  </div>
+  <nav>
+    <button id="tab-home" class="tab active">余量显示</button>
+    <button id="tab-settings" class="tab">设置</button>
+  </nav>
+  <div class="header-right">
+    <span id="last-update" class="muted"></span>
+    <button id="btn-refresh" class="btn primary">立即刷新</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 视图 1：余量显示 ============ -->
+  <section id="view-home">
+    <p class="drag-hint">提示：拖拽卡片可调整顺序（自动保存）；未启用的供应商不显示</p>
+    <div id="cards" class="cards"></div>
+    <p class="muted footer-note">颜色规则：已用 &lt;70% 🟢 正常 · 70–89% 🟠 偏高 · ≥90% 🔴 接近耗尽</p>
+  </section>
+
+  <!-- ============ 视图 2：设置 ============ -->
+  <section id="view-settings" class="hidden">
+    <!-- 全局 -->
+    <div class="settings-block global-block">
+      <div class="global-left">
+        <h2>全局</h2>
+        <div class="form-row">
+          <label>自动刷新间隔（分钟，0 = 关闭）</label>
+          <input id="set-refresh" type="number" min="0" max="120" step="1">
+        </div>
+        <div class="form-row checkbox-row">
+          <label class="check-label">
+            <input type="checkbox" id="opt-background"> 最小化开关：开启时点击 × 隐藏到右下角托盘区（任务栏不再显示按钮，悬停托盘图标可看余量，悬浮条保持）；关闭时点击 × 完全退出程序
+          </label>
+        </div>
+        <div class="form-row">
+          <label>网络代理（访问 chatgpt.com / opencode.ai 用，如 http://127.0.0.1:7897；留空 = 自动探测系统代理与常见本地端口）</label>
+          <input id="set-proxy" type="text" placeholder="http://127.0.0.1:7897">
+        </div>
+        <h3 class="sub-title">任务栏悬浮条（叠加显示在任务栏上）</h3>
+        <div class="form-row checkbox-row">
+          <label class="check-label">
+            <input type="checkbox" id="bar-enabled"> 启用任务栏悬浮条
+          </label>
+        </div>
+        <div class="form-row inline-row">
+          <label>不透明度 <input id="bar-opacity" type="number" min="30" max="100" step="1"> %</label>
+          <label>刷新间隔 <input id="bar-refresh_seconds" type="number" min="5" max="600" step="1"> 秒</label>
+        </div>
+        <div class="form-row inline-row">
+          <label>字号 <input id="bar-font_size" type="number" min="8" max="28" step="1"></label>
+          <button id="btn-bar-reset" class="btn">重置位置</button>
+        </div>
+        <div class="hint">悬浮条为深色圆角样式：每个供应商一段（状态点与数值颜色随余量变化 🟢&lt;70% 🟠70–89% 🔴≥90%），内容超宽自动换行。默认<b>叠加在任务栏上居中</b>；<b>可鼠标拖动</b>（位置自动保存），左键单击打开主窗口，右键菜单：打开 / 刷新 / 退出。字号修改后随下次刷新生效。</div>
+      </div>
+      <div class="global-right">
+        <button id="btn-save" class="btn primary">保存设置</button>
+        <span id="save-msg" class="test-result"></span>
+      </div>
+    </div>
+
+    <!-- 火山方舟 -->
+    <div class="settings-block">
+      <h2><input type="checkbox" id="pv-volcengine-enabled" class="pv-toggle"> 火山方舟 Coding Plan</h2>
+      <div class="form-row">
+        <label>显示名称</label>
+        <input id="pv-volcengine-name" type="text">
+      </div>
+      <div class="form-row">
+        <label>Access Key ID（AK，火山控制台 → API 访问密钥；建议子账号只读权限）</label>
+        <input id="pv-volcengine-ak" type="password" placeholder="AKLT...">
+      </div>
+      <div class="form-row">
+        <label>Secret Access Key（SK）</label>
+        <input id="pv-volcengine-sk" type="password" placeholder="Secret Key">
+      </div>
+      <div class="form-row">
+        <label>ProjectName</label>
+        <input id="pv-volcengine-project" type="text" placeholder="default">
+      </div>
+      <div class="hint">V4 签名直连 <code>open.volcengineapi.com</code>（service=ark, region=cn-beijing）。官方未文档化该 Action，签名被拒时卡片会给出具体错误码。</div>
+      <label class="check-label tray-check">
+        <input type="checkbox" class="tray-item-toggle" data-pid="volcengine"> 在悬浮条中显示
+      </label>
+      <button class="btn test" data-pid="volcengine">测试连接</button>
+      <span class="test-result" id="tr-volcengine"></span>
+    </div>
+
+    <!-- OpenCode Go -->
+    <div class="settings-block">
+      <h2><input type="checkbox" id="pv-opencode-enabled" class="pv-toggle"> OpenCode Go</h2>
+      <div class="form-row">
+        <label>显示名称</label>
+        <input id="pv-opencode-name" type="text">
+      </div>
+      <div class="form-row">
+        <label>API Key（Bearer Token）</label>
+        <input id="pv-opencode-api_key" type="password" placeholder="OPENCODE_GO_API_KEY">
+      </div>
+      <div class="hint">官方用量端点：<code>GET https://opencode.ai/zen/go/v1/usage</code>。Key 无效返回 401。</div>
+      <label class="check-label tray-check">
+        <input type="checkbox" class="tray-item-toggle" data-pid="opencode"> 在悬浮条中显示
+      </label>
+      <button class="btn test" data-pid="opencode">测试连接</button>
+      <span class="test-result" id="tr-opencode"></span>
+    </div>
+
+    <!-- OpenAI Codex -->
+    <div class="settings-block">
+      <h2><input type="checkbox" id="pv-codex-enabled" class="pv-toggle"> OpenAI Codex（ChatGPT Plan）</h2>
+      <div class="form-row">
+        <label>显示名称</label>
+        <input id="pv-codex-name" type="text">
+      </div>
+      <div class="form-row">
+        <label>凭据文件路径（留空 = 自动读取 <code>~/.codex/auth.json</code>）</label>
+        <input id="pv-codex-auth_path" type="text" placeholder="C:\Users\你\.codex\auth.json">
+      </div>
+      <div class="form-row">
+        <label>Account ID（留空 = 自动取 auth.json 中的 account_id）</label>
+        <input id="pv-codex-account_id" type="text" placeholder="可选">
+      </div>
+      <div class="hint">查询端点：<code>GET chatgpt.com/backend-api/wham/usage</code>（ChatGPT 后端非公开端点，显示 5小时 / 7天 / 代码审查周限 + 积分余额）。access_token 过期时自动用 refresh_token 刷新并写回 auth.json；若登录态彻底失效，请先运行 <code>codex login</code>。</div>
+      <label class="check-label tray-check">
+        <input type="checkbox" class="tray-item-toggle" data-pid="codex"> 在悬浮条中显示
+      </label>
+      <button class="btn test" data-pid="codex">测试连接</button>
+      <span class="test-result" id="tr-codex"></span>
+    </div>
+
+    <!-- DeepSeek -->
+    <div class="settings-block">
+      <h2><input type="checkbox" id="pv-deepseek-enabled" class="pv-toggle"> DeepSeek 开放平台</h2>
+      <div class="form-row">
+        <label>显示名称</label>
+        <input id="pv-deepseek-name" type="text">
+      </div>
+      <div class="form-row">
+        <label>API Key（sk- 开头，platform.deepseek.com → API Keys 创建）</label>
+        <input id="pv-deepseek-api_key" type="password" placeholder="sk-...">
+      </div>
+      <div class="hint">官方余额接口：<code>GET api.deepseek.com/user/balance</code>（文档化接口），显示总余额（赠金 + 充值）与可用状态。余额不足以调用时返回 HTTP 402。</div>
+      <label class="check-label tray-check">
+        <input type="checkbox" class="tray-item-toggle" data-pid="deepseek"> 在悬浮条中显示
+      </label>
+      <button class="btn test" data-pid="deepseek">测试连接</button>
+      <span class="test-result" id="tr-deepseek"></span>
+    </div>
+
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

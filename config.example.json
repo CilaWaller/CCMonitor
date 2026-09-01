@@ -1,0 +1,52 @@
+{
+  "refresh_minutes": 5,
+  "background": true,
+  "proxy": "",
+  "card_order": [
+    "volcengine",
+    "opencode",
+    "codex",
+    "deepseek"
+  ],
+  "bar": {
+    "enabled": true,
+    "opacity": 92,
+    "refresh_seconds": 30,
+    "bg_color": "#1f2328",
+    "text_color": "#ffffff",
+    "font_size": 14,
+    "x": null,
+    "y": null,
+    "items": [
+      "volcengine",
+      "opencode",
+      "codex",
+      "deepseek"
+    ]
+  },
+  "providers": {
+    "volcengine": {
+      "enabled": false,
+      "name": "火山方舟 Coding Plan",
+      "ak": "",
+      "sk": "",
+      "project": "default"
+    },
+    "opencode": {
+      "enabled": false,
+      "name": "OpenCode Go",
+      "api_key": ""
+    },
+    "codex": {
+      "enabled": false,
+      "name": "OpenAI Codex (ChatGPT Plan)",
+      "auth_path": "",
+      "account_id": ""
+    },
+    "deepseek": {
+      "enabled": false,
+      "name": "DeepSeek 开放平台",
+      "api_key": ""
+    }
+  }
+}
